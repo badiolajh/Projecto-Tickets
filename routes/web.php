@@ -1,7 +1,49 @@
 <?php
+//Este archivo es el archivo de rutas principal
+//Aqui se conecta todo el sistema: login, middleware de roles y dashboards
 
+//Aqui se importa el controlador Login y se importa Route para definir rutas
+use App\Http\Controllers\Auth\LoginController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
+// Rutas de autenticaciòn
+
+//muestra formulario
+Route::get( '/login',  [LoginController::class, 'showLogin'])->name('login');
+
+//procesa login
+Route::post('/login',  [LoginController::class, 'login']);
+//Solo los usuarios autenticados pueden hacer logout
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
+
+//Ruta raiz
+//Si alguien entra a "/" lo manda directo al login
+Route::get('/', fn() => redirect()->route('login'));
+
+// Rutas empleado
+
+//debe estar logueado (auth)
+//debe ser empleado (rol:empleado)
+//todas las rutas empiezan con /empleado
+//los nombres empiezan con empleado
+Route::middleware(['auth', 'rol:empleado'])->prefix('empleado')->name('empleado.')->group(function () {
+
+    //Dashboard empleado
+    Route::get('/dashboard', fn() => view('empleado.dashboard'))->name('dashboard');
+});
+
+//Rutas de Admin
+//solo los administradores pueden entrar
+Route::middleware(['auth', 'rol:admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    //Dashboard de administrador
+    Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
+});
+
+// Rutas de tecnico
+//solo los tecnicos pueden acceder
+Route::middleware(['auth', 'rol:tecnico'])->prefix('tecnico')->name('tecnico.')->group(function () {
+    
+    //Dashboard de tecnico
+    Route::get('/dashboard', fn() => view('tecnico.dashboard'))->name('dashboard');
 });
