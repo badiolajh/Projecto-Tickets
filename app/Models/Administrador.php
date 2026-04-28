@@ -26,4 +26,13 @@ class Administrador extends Model //Se esta creando un modelo de Eloquent
                                 //Modelo        //FK        //PK
         return $this->belongsTo(Usuario::class, 'id_admin', 'id');
     }
+
+    // Funcion para tickets del admin
+    public function ticketsAsignados()
+    {
+        // Los tickets donde el técnico fue asignado por este admin
+        // Por ahora contamos tickets abiertos sin técnico asignado
+        return $this->hasMany(Ticket::class, 'id_empleado', 'id_admin');
+    }
+
 }

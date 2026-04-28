@@ -24,4 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         //crea un nombre corto para el middleware
         'rol' => \App\Http\Middleware\RolMiddleware::class,
     ]);
-})->create();
+    })
+    ->withExceptions(function (Exceptions $exceptions) {
+        //
+    })->create();
