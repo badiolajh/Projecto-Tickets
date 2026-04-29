@@ -4,8 +4,10 @@
 
 //Aqui se importa el controlador Login y se importa Route para definir rutas
 use App\Http\Controllers\Auth\LoginController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketController;
+use App\Http\Controllers\AdminTicketController;
+use App\Http\Controllers\TecnicoController;
+use Illuminate\Support\Facades\Route;
 
 // Rutas de autenticaciòn
 
@@ -41,16 +43,16 @@ Route::middleware(['auth', 'rol:empleado'])->prefix('empleado')->name('empleado.
 //Rutas de Admin
 //solo los administradores pueden entrar
 Route::middleware(['auth', 'rol:admin'])->prefix('admin')->name('admin.')->group(function () {
-
-    //Dashboard de administrador
-    
-    Route::get('/dashboard', fn() => view('admin.dashboard'))->name('dashboard');
+    Route::get('/dashboard',                  fn() => view('admin.dashboard'))->name('dashboard');
+    Route::get('/tickets',                    [AdminTicketController::class, 'index'])->name('tickets');
+    Route::patch('/tickets/{id}/asignar',     [AdminTicketController::class, 'asignar'])->name('tickets.asignar');
 });
 
 // Rutas de tecnico
 //solo los tecnicos pueden acceder
 Route::middleware(['auth', 'rol:tecnico'])->prefix('tecnico')->name('tecnico.')->group(function () {
-    
-    //Dashboard de tecnico
-    Route::get('/dashboard', fn() => view('tecnico.dashboard'))->name('dashboard');
+    Route::get('/dashboard',             fn() => view('tecnico.dashboard'))->name('dashboard');
+    Route::get('/tickets',               [TecnicoController::class, 'index'])->name('tickets');
+    Route::get('/tickets/finalizados',   [TecnicoController::class, 'finalizados'])->name('tickets.finalizados');
+    Route::patch('/tickets/{id}/estado', [TecnicoController::class, 'cambiarEstado'])->name('tickets.estado');
 });
