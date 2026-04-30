@@ -24,14 +24,26 @@ class AdminTicketController extends Controller
     {
         $request->validate([
             'id_tecnico' => 'required|exists:tecnico,id_tecnico',
+        ], [
+            'id_tecnico.required' => 'Debes seleccionar un técnico.',
+            'id_tecnico.exists'   => 'El técnico seleccionado no existe.',
         ]);
 
         $ticket = Ticket::findOrFail($id);
+
+        // Verificar que el ticket no esté ya cerrado
+        if (in_array($ticket->estado, ['resuelto', 'cerrado'])) {
+            return back()->withErrors([
+                'error' => 'No puedes reasignar un ticket ya cerrado o resuelto.'
+            ]);
+        }
+
         $estadoAnterior = $ticket->estado;
 
         $ticket->update([
             'id_tecnico' => $request->id_tecnico,
             'estado'     => 'en_proceso',
+            'updated_at' => now(),
         ]);
 
         // Registrar en historial

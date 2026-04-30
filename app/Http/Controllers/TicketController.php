@@ -6,12 +6,18 @@ use App\Models\Ticket;
 use App\Models\Administrador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class TicketController extends Controller
 {
     // Listar tickets del empleado autenticado
     public function index()
     {
+        // Verifica que el usuario tenga rol empleado
+        if (!Auth::user()->empleado) {
+            abort(403, 'No tienes acceso a esta sección.');
+        }
+
         $tickets = Ticket::where('id_empleado', Auth::user()->empleado->id_empleado)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -22,6 +28,10 @@ class TicketController extends Controller
     // Mostrar formulario de crear ticket
     public function create()
     {
+        if (!Auth::user()->empleado) {
+            abort(403, 'No tienes acceso a esta sección.');
+        }
+
         return view('empleado.crear_ticket');
     }
 
@@ -29,32 +39,42 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'titulo'      => 'required|string|max:150',
-            'descripcion' => 'required|string',
+            'titulo'      => 'required|string|min:5|max:150',
+            'descripcion' => 'required|string|min:10',
             'prioridad'   => 'required|in:Normal,Alta',
+        ], [
+            'titulo.required'      => 'El título es obligatorio.',
+            'titulo.min'           => 'El título debe tener al menos 5 caracteres.',
+            'titulo.max'           => 'El título no puede superar 150 caracteres.',
+            'descripcion.required' => 'La descripción es obligatoria.',
+            'descripcion.min'      => 'La descripción debe tener al menos 10 caracteres.',
+            'prioridad.required'   => 'La prioridad es obligatoria.',
+            'prioridad.in'         => 'La prioridad debe ser Normal o Alta.',
         ]);
 
         // ── Asignación automática al admin ──────────────────────────
-        // Busca el admin con menos tickets asignados (reparto equitativo)
-        $admin = Administrador::withCount('ticketsAsignados')
-            ->orderBy('tickets_asignados_count', 'asc')
-            ->first();
-
+         // Verificar que existe al menos un admin
+        $admin = Administrador::first();
         if (!$admin) {
             return back()->withErrors([
-                'error' => 'No hay administradores disponibles.'
-            ]);
+                'error' => 'No hay administradores disponibles. Contacta al sistema.'
+            ])->withInput();
+        }
+
+        // Verificar que el usuario tiene rol empleado
+        if (!Auth::user()->empleado) {
+            abort(403, 'No tienes acceso a esta sección.');
         }
         // ────────────────────────────────────────────────────────────
 
-        Ticket::create([
+        TTicket::create([
             'folio'       => $this->generarFolio(),
             'titulo'      => $request->titulo,
             'descripcion' => $request->descripcion,
             'prioridad'   => $request->prioridad,
             'estado'      => 'abierto',
             'id_empleado' => Auth::user()->empleado->id_empleado,
-            'id_tecnico'  => null,  // el admin lo asignará después
+            'id_tecnico'  => null,
         ]);
 
         return redirect()->route('empleado.tickets')
