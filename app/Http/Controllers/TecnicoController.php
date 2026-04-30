@@ -11,6 +11,10 @@ class TecnicoController extends Controller
     // Tickets pendientes (abierto o en_proceso)
     public function index()
     {
+        if (!Auth::user()->tecnico) {
+            abort(403, 'No tienes acceso a esta sección.');
+        }
+
         $tickets = Ticket::with(['empleado.usuario'])
             ->where('id_tecnico', Auth::user()->tecnico->id_tecnico)
             ->whereIn('estado', ['abierto', 'en_proceso'])
@@ -23,6 +27,10 @@ class TecnicoController extends Controller
     // Tickets finalizados (resuelto o cerrado)
     public function finalizados()
     {
+        if (!Auth::user()->tecnico) {
+            abort(403, 'No tienes acceso a esta sección.');
+        }
+
         $tickets = Ticket::with(['empleado.usuario'])
             ->where('id_tecnico', Auth::user()->tecnico->id_tecnico)
             ->whereIn('estado', ['resuelto', 'cerrado'])
@@ -33,14 +41,31 @@ class TecnicoController extends Controller
     }
 
     // Cambiar estado del ticket + comentario
-    public function cambiarEstado(Request $request, $id)
+     public function cambiarEstado(Request $request, $id)
     {
         $request->validate([
             'estado'     => 'required|in:en_proceso,resuelto,cerrado',
-            'comentario' => 'nullable|string',
+            'comentario' => 'nullable|string|max:500',
+        ], [
+            'estado.required' => 'El estado es obligatorio.',
+            'estado.in'       => 'El estado no es válido.',
+            'comentario.max'  => 'El comentario no puede superar 500 caracteres.',
         ]);
 
         $ticket = Ticket::findOrFail($id);
+
+        // Verificar que el ticket pertenece a este técnico
+        if ($ticket->id_tecnico !== Auth::user()->tecnico->id_tecnico) {
+            abort(403, 'Este ticket no está asignado a ti.');
+        }
+
+        // Verificar que el ticket no esté ya cerrado
+        if ($ticket->estado === 'cerrado') {
+            return back()->withErrors([
+                'error' => 'No puedes modificar un ticket ya cerrado.'
+            ]);
+        }
+
         $estadoAnterior = $ticket->estado;
 
         $ticket->update([
@@ -49,7 +74,6 @@ class TecnicoController extends Controller
             'closed_at'  => in_array($request->estado, ['resuelto', 'cerrado']) ? now() : null,
         ]);
 
-        // Registrar en historial
         TicketHistorial::create([
             'id_ticket'    => $ticket->id_ticket,
             'estado_ant'   => $estadoAnterior,
