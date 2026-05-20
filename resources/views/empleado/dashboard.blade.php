@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
-@section('title', 'Mis Tickets — Empleado')
-@section('page-title', 'Mis Tickets')
+@section('title', 'Dashboard — Empleado')
+@section('page-title', 'Dashboard')
 
 @section('topbar-actions')
-    <a href="{{ route('tickets.create') }}" class="btn btn-primary btn-sm">
-        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+    <a href="{{ route('empleado.tickets.crear') }}" class="btn btn-primary btn-sm">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M12 5v14M5 12h14"/></svg>
         Nuevo ticket
     </a>
 @endsection
@@ -31,79 +31,100 @@
     </div>
 </div>
 
-{{-- Lista de tickets del empleado --}}
-<div class="card">
+{{-- Tickets activos (abiertos + en proceso) --}}
+<div class="card" style="margin-bottom: 24px;">
     <div class="card-header">
         <div>
-            <div class="card-title">Mis reportes</div>
-            <div class="card-subtitle">Historial de tickets que has creado</div>
+            <div class="card-title">Tickets activos</div>
+            <div class="card-subtitle">Tus solicitudes pendientes de resolución</div>
         </div>
+        <a href="{{ route('empleado.tickets') }}" class="btn btn-ghost btn-sm">Ver historial completo →</a>
     </div>
 
-    @if($tickets->isEmpty())
-        <div class="empty-state">
-            <div class="empty-icon">○</div>
-            <h3>Sin tickets aún</h3>
-            <p>Crea tu primer reporte si tienes algún problema técnico.</p>
-            <a href="{{ route('tickets.create') }}" class="btn btn-primary" style="margin-top: 16px; display: inline-flex;">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M12 5v14M5 12h14"/></svg>
-                Crear ticket
-            </a>
+    @php
+        $activos = $tickets->getCollection()->whereIn('estado', ['abierto', 'en_proceso']);
+    @endphp
+
+    @if($activos->isEmpty())
+        <div class="empty-state" style="padding: 32px 24px;">
+            <div class="empty-icon">✓</div>
+            <h3>Sin tickets activos</h3>
+            <p>No tienes solicitudes pendientes. ¿Todo funciona bien?</p>
         </div>
     @else
         <div>
-            @foreach($tickets as $ticket)
-            <div style="padding: 16px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 16px;">
+            @foreach($activos as $ticket)
+            <div style="padding: 14px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px;">
 
-                {{-- Estado visual --}}
-                <div style="margin-top: 4px; flex-shrink: 0;">
+                {{-- Indicador de estado --}}
+                <div style="margin-top: 5px; flex-shrink: 0;">
                     @if($ticket->estado == 'abierto')
                         <div style="width: 8px; height: 8px; border-radius: 50%; background: #185FA5; box-shadow: 0 0 0 3px #EBF4FF;"></div>
-                    @elseif($ticket->estado == 'en_proceso')
-                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #B45309; box-shadow: 0 0 0 3px #FEF3E2;"></div>
                     @else
-                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #1A6B3A; box-shadow: 0 0 0 3px #ECFDF5;"></div>
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: #B45309; box-shadow: 0 0 0 3px #FEF3E2;"></div>
                     @endif
                 </div>
 
                 <div style="flex: 1;">
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px; flex-wrap: wrap;">
-                        <code style="font-family: 'DM Mono', monospace; font-size: 11px; background: #F7F6F3; padding: 2px 7px; border-radius: 4px; color: var(--muted);">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
+                        <code style="font-family:'DM Mono',monospace; font-size:11px; background:#F7F6F3; padding:2px 7px; border-radius:4px; color:var(--muted);">
                             {{ $ticket->folio }}
                         </code>
-                        <span class="badge-status badge-{{ $ticket->estado }}">{{ ucfirst(str_replace('_', ' ', $ticket->estado)) }}</span>
+                        <span class="badge-status badge-{{ $ticket->estado }}">{{ ucfirst(str_replace('_',' ',$ticket->estado)) }}</span>
                         <span class="badge-status badge-{{ strtolower($ticket->prioridad) }}">{{ ucfirst($ticket->prioridad) }}</span>
                     </div>
-
-                    <div style="font-weight: 500; font-size: 14px; margin-bottom: 4px;">{{ $ticket->titulo }}</div>
-                    <div style="font-size: 12px; color: var(--muted); max-width: 560px;">{{ Str::limit($ticket->descripcion, 100) }}</div>
-
+                    <div style="font-weight: 500; font-size: 14px; margin-bottom: 3px;">{{ $ticket->titulo }}</div>
                     @if($ticket->tecnico)
-                        <div style="font-size: 11px; color: var(--muted); margin-top: 8px; display: flex; align-items: center; gap: 6px;">
-                            <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                            Técnico asignado: <strong style="color: var(--text);">{{ $ticket->tecnico->usuario->nombre }}</strong>
+                        <div style="font-size: 11px; color: var(--muted);">
+                            Técnico: <strong style="color: var(--text);">{{ $ticket->tecnico->usuario->nombre }}</strong>
                         </div>
                     @else
-                        <div style="font-size: 11px; color: var(--muted); margin-top: 8px;">
-                            Esperando asignación de técnico…
-                        </div>
+                        <div style="font-size: 11px; color: var(--muted); font-style: italic;">Esperando asignación de técnico…</div>
                     @endif
                 </div>
 
                 <div style="font-size: 11px; color: var(--muted); flex-shrink: 0; text-align: right; white-space: nowrap;">
-                    {{ $ticket->created_at->format('d/m/Y') }}<br>
-                    {{ $ticket->created_at->format('H:i') }}
+                    {{ \Carbon\Carbon::parse($ticket->created_at)->format('d/m/Y') }}<br>
+                    <span style="color: #C9C7BF;">{{ \Carbon\Carbon::parse($ticket->created_at)->format('H:i') }}</span>
                 </div>
             </div>
             @endforeach
         </div>
-
-        @if($tickets->hasPages())
-            <div style="padding: 16px 0 4px; display: flex; justify-content: flex-end;">
-                {{ $tickets->links() }}
-            </div>
-        @endif
     @endif
 </div>
+
+{{-- Últimos resueltos (máx 3) --}}
+@php
+    $recientesResueltos = $tickets->getCollection()->whereIn('estado', ['cerrado','resuelto'])->take(3);
+@endphp
+
+@if($recientesResueltos->isNotEmpty())
+<div class="card">
+    <div class="card-header">
+        <div>
+            <div class="card-title">Resueltos recientemente</div>
+            <div class="card-subtitle">Últimas solicitudes atendidas</div>
+        </div>
+        <a href="{{ route('empleado.tickets') }}" class="btn btn-ghost btn-sm">Ver todos →</a>
+    </div>
+    <div>
+        @foreach($recientesResueltos as $ticket)
+        <div style="padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px;">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: #1A6B3A; box-shadow: 0 0 0 3px #ECFDF5; flex-shrink: 0;"></div>
+            <div style="flex: 1;">
+                <div style="font-weight: 500; font-size: 13px;">{{ $ticket->titulo }}</div>
+                <div style="font-size: 11px; color: var(--muted);">
+                    <code style="font-family:'DM Mono',monospace; font-size:10px; background:#F7F6F3; padding:1px 5px; border-radius:3px;">{{ $ticket->folio }}</code>
+                    · Resuelto por {{ $ticket->tecnico->usuario->nombre ?? '—' }}
+                </div>
+            </div>
+            <div style="font-size: 11px; color: var(--muted); white-space: nowrap;">
+                {{ $ticket->closed_at ? \Carbon\Carbon::parse($ticket->closed_at)->format('d/m/Y') : '—' }}
+            </div>
+        </div>
+        @endforeach
+    </div>
+</div>
+@endif
 
 @endsection

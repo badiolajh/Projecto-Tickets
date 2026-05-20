@@ -32,7 +32,7 @@
     <div class="stat-card">
         <div class="stat-label">Total técnicos</div>
         <div class="stat-value">{{ $stats['tecnicos'] ?? 0 }}</div>
-        <div class="stat-delta">Activos en sistema</div>
+        <div class="stat-delta">Dados de alta en el sistema</div>
     </div>
 </div>
  

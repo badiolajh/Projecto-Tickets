@@ -1,45 +1,71 @@
 @extends('layouts.app')
-
+ 
+@section('title', 'Nuevo Usuario — Admin')
+@section('page-title', 'Crear nuevo usuario')
+ 
+@section('topbar-actions')
+    <a href="{{ route('admin.users.index') }}" class="btn btn-ghost btn-sm">← Volver</a>
+@endsection
+ 
 @section('content')
-
-<h2 class="text-2xl font-bold text-gray-800 mb-6">
-    Agregar Usuario
-</h2>
-
-<form class="bg-white p-6 rounded-xl shadow space-y-4">
-
-    <input 
-        type="text" 
-        placeholder="Nombre"
-        class="w-full p-3 border rounded-lg"
-    >
-
-    <input 
-        type="email" 
-        placeholder="Correo"
-        class="w-full p-3 border rounded-lg"
-    >
-
-    <input 
-        type="password" 
-        placeholder="Contraseña"
-        class="w-full p-3 border rounded-lg"
-    >
-
-    <select class="w-full p-3 border rounded-lg">
-        <option>Empleado</option>
-        <option>Técnico</option>
-        <option>Administrador</option>
-    </select>
-
-    <button class="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600">
-        Crear Usuario
-    </button>
-
-    <button class="w-full bg-red-500 text-white p-3 rounded-lg hover:bg-red-600">
-        Cancelar
-    </button>
-
-</form>
-
+ 
+<div style="max-width: 560px;">
+    <div class="card">
+        <form action="{{ route('admin.users.store') }}" method="POST">
+            @csrf
+ 
+            <div class="form-group">
+                <label>Nombre completo <span style="color:var(--danger);">*</span></label>
+                <input type="text" name="nombre" value="{{ old('nombre') }}"
+                    placeholder="Ej. Juan García" required maxlength="100"
+                    class="{{ $errors->has('nombre') ? 'is-invalid' : '' }}">
+                @error('nombre') <div style="font-size:12px;color:var(--danger);margin-top:4px;">{{ $message }}</div> @enderror
+            </div>
+ 
+            <div class="form-group">
+                <label>Correo electrónico <span style="color:var(--danger);">*</span></label>
+                <input type="email" name="email" value="{{ old('email') }}"
+                    placeholder="correo@empresa.com" required
+                    class="{{ $errors->has('email') ? 'is-invalid' : '' }}">
+                @error('email') <div style="font-size:12px;color:var(--danger);margin-top:4px;">{{ $message }}</div> @enderror
+            </div>
+ 
+            <div class="form-group">
+                <label>Contraseña <span style="color:var(--danger);">*</span></label>
+                <input type="password" name="password" placeholder="Mínimo 6 caracteres" required
+                    class="{{ $errors->has('password') ? 'is-invalid' : '' }}">
+                @error('password') <div style="font-size:12px;color:var(--danger);margin-top:4px;">{{ $message }}</div> @enderror
+            </div>
+ 
+            <div class="form-group">
+                <label>Rol <span style="color:var(--danger);">*</span></label>
+                <select name="rol" required class="{{ $errors->has('rol') ? 'is-invalid' : '' }}">
+                    <option value="">Seleccionar rol…</option>
+                    <option value="empleado"      {{ old('rol') == 'empleado'      ? 'selected' : '' }}>Empleado</option>
+                    <option value="tecnico"       {{ old('rol') == 'tecnico'       ? 'selected' : '' }}>Técnico</option>
+                    <option value="administrador" {{ old('rol') == 'administrador' ? 'selected' : '' }}>Administrador</option>
+                </select>
+                @error('rol') <div style="font-size:12px;color:var(--danger);margin-top:4px;">{{ $message }}</div> @enderror
+            </div>
+ 
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Área</label>
+                    <input type="text" name="area" value="{{ old('area') }}" placeholder="Ej. Administración">
+                </div>
+                <div class="form-group">
+                    <label>Cargo</label>
+                    <input type="text" name="cargo_u" value="{{ old('cargo_u') }}"
+                        placeholder="Ej. Contador" maxlength="25">
+                </div>
+            </div>
+ 
+            <div style="display:flex;gap:10px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:20px;margin-top:4px;">
+                <a href="{{ route('admin.users.index') }}" class="btn btn-outline">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Crear usuario</button>
+            </div>
+        </form>
+    </div>
+</div>
+ 
 @endsection
